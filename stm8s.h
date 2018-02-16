@@ -1,0 +1,1 @@
+../stm8s-sdcc-lib/stm8s.h
