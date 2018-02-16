@@ -4,6 +4,8 @@
 
 void uart_init();
 
+int position = 0;
+
 int main()
 {
     CLK_CKDIVR.HSIDIV = HSIDIV_0;
@@ -19,25 +21,27 @@ int main()
 
     uart_init();
 
-    EXTI_CR1.PAIS = EXTI_RISING_FALLING_EDGE;
+    EXTI_CR1.PAIS = EXTI_RISING_EDGE;
     enable_interrupts();
 
     while (1)
     {
-        printf("");
     }
 }
 
 void porta_isr3(void) __interrupt(IRQ_EXTI0_PORTA)
 {
-    if (PORTA.IDR1)
+    if (PORTA.IDR2)
     {
-        PORTC.ODR3 = true;
+        /* PORTC.ODR3 = true; */
+        position++;
     }
     else
     {
-        PORTC.ODR3 = false;
+        /* PORTC.ODR3 = false; */
+        position--;
     }
+    printf("%d", position);
 }
 
 void uart_init()
