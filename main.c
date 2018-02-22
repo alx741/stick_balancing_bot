@@ -3,9 +3,13 @@
 #include <stdbool.h>
 
 void uart_init();
+void i2c_init();
 void pulse(bool direction);
+void delay(void);
 
 int position = 0;
+
+#define MPU_ADDR 0b11010000
 
 int main()
 {
@@ -30,6 +34,9 @@ int main()
 
     EXTI_CR1.PAIS = EXTI_RISING_EDGE;
     enable_interrupts();
+
+    delay(); // Wait MPU6050 to initialize
+    i2c_init();
 
     while (1)
     {
@@ -66,7 +73,7 @@ void pulse(bool direction)
     }
 }
 
-void porta_isr3(void) __interrupt(IRQ_EXTI0_PORTA)
+void porta_isr(void) __interrupt(IRQ_EXTI0_PORTA)
 {
     if (PORTA.IDR2)
     {
@@ -77,6 +84,30 @@ void porta_isr3(void) __interrupt(IRQ_EXTI0_PORTA)
         position--;
     }
     printf("%d", position);
+}
+
+void i2c_isr(void) __interrupt(IRQ_I2C)
+{
+    uint8_t dummy;
+    if (I2C_SR1.SB)
+    {
+        dummy = I2C_SR1.SB;
+        I2C_DR = MPU_ADDR;
+    }
+    else if(I2C_SR1.ADDR)
+    {
+        PORTC.ODR3 = true;
+    }
+}
+
+void i2c_init()
+{
+    I2C_FREQR = 16; // 16 MHz
+    I2C_CCRL = 0x50; // 100 KHz
+    I2C_TRISER = 17; // configure TRISE
+    I2C_ITR.ITEVTEN = true; // Enable interrupts
+    I2C_CR1.PE = true; // Enable peripheral
+    I2C_CR2.START = true; // Start condition
 }
 
 void uart_init()
