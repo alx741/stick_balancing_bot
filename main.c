@@ -1,4 +1,7 @@
-#include "stm8s.h" // From https://github.com/alx741/stm8s-sdcc-lib/stm8s.h
+// From https://github.com/alx741/stm8s-sdcc-lib
+#include <stm8s.h>
+#include <i2c.h>
+
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -10,6 +13,7 @@ void delay(void);
 int position = 0;
 
 #define MPU_ADDR 0b11010000
+
 
 #define I2C_READ            0x01
 #define I2C_WRITE           0x00
@@ -43,10 +47,12 @@ void main()
     i2c_init();
     enable_interrupts();
 
-    I2C_CR2.START = true;
-    while (! I2C_SR1.SB);
+    i2c_start();
+    /* I2C_CR2.START = true; */
+    /* while (! I2C_SR1.SB); */
 
-    I2C_DR = MPU_ADDR + I2C_WRITE;
+    /* I2C_DR = MPU_ADDR + I2C_WRITE; */
+    I2C_DR = MPU_ADDR | 0x00;
     while (! I2C_SR1.ADDR);
     dummy = (uint8_t) I2C_SR1.ADDR;
     dummy = (uint8_t) I2C_SR3.BUSY;
@@ -61,7 +67,7 @@ void main()
     I2C_CR2.START = true;
     while (! I2C_SR1.SB);
 
-    I2C_DR = MPU_ADDR + I2C_READ;
+    I2C_DR = MPU_ADDR | 0x01;
     while (! I2C_SR1.ADDR);
     dummy = (uint8_t) I2C_SR1.ADDR;
     dummy = (uint8_t) I2C_SR3.BUSY;
@@ -125,10 +131,6 @@ void porta_isr(void) __interrupt(IRQ_EXTI0_PORTA)
 
 void uart_init()
 {
-    /* uint16_t div = (16000000 + 9600 / 2) / 9600; */
-    /* UART_BRR2 = ((div >> 8) & 0xF0) + (div & 0x0F); */
-    /* UART_BRR1 = div >> 4; */
-
     UART_BRR2 = 0x03;   // 9600 baud
     UART_BRR1 = 0x68;
     UART_CR1.UARTD = 0; // UART enabled
@@ -143,7 +145,6 @@ void i2c_init()
 {
     I2C_FREQR = 16; // 16 MHz
     I2C_CCRL = 0x50; // 100 KHz
-    /* I2C_ITR.ITEVTEN = true; // Enable interrupts */
     I2C_CR1.PE = true; // Enable peripheral
 }
 
