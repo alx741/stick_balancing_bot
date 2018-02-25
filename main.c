@@ -6,17 +6,12 @@
 #include <stdbool.h>
 
 void uart_init();
-void i2c_init();
 void pulse(bool direction);
 void delay(void);
 
 int position = 0;
 
 #define MPU_ADDR 0b11010000
-
-
-#define I2C_READ            0x01
-#define I2C_WRITE           0x00
 
 void main()
 {
@@ -44,41 +39,19 @@ void main()
     delay(); // Wait MPU6050 to initialize
 
     uart_init();
-    i2c_init();
+    i2c_init_100khz();
     enable_interrupts();
 
     i2c_start();
-    /* I2C_CR2.START = true; */
-    /* while (! I2C_SR1.SB); */
+    i2c_slave_select(MPU_ADDR, I2C_TRANSMIT);
+    i2c_transmit_byte(0x00);
+    i2c_stop();
+    i2c_start();
+    i2c_slave_select(MPU_ADDR, I2C_RECEIVE);
+    data = i2c_receive_byte();
 
-    /* I2C_DR = MPU_ADDR + I2C_WRITE; */
-    I2C_DR = MPU_ADDR | 0x00;
-    while (! I2C_SR1.ADDR);
-    dummy = (uint8_t) I2C_SR1.ADDR;
-    dummy = (uint8_t) I2C_SR3.BUSY;
-    while (I2C_SR1.ADDR);
-
-    I2C_DR = 0x00;
-    while (! I2C_SR1.TXE);
-
-    I2C_CR2.STOP = true;
-    while (I2C_SR3.MSL);
-
-    I2C_CR2.START = true;
-    while (! I2C_SR1.SB);
-
-    I2C_DR = MPU_ADDR | 0x01;
-    while (! I2C_SR1.ADDR);
-    dummy = (uint8_t) I2C_SR1.ADDR;
-    dummy = (uint8_t) I2C_SR3.BUSY;
-
-    I2C_CR2.ACK = false;
-    /* i2c_stop(); */
-    while (! I2C_SR1.RXNE);
-    data = I2C_DR;
-
+    printf("Datum = %d\n", data);
     PORTC.ODR3 = true;
-    printf("Device ID: %d\n", data);
 
 
     while (1)
@@ -140,15 +113,6 @@ void uart_init()
     UART_CR2.TEN = 1;   // Transmitter enabled
     UART_CR2.REN = 1;   // Receiver enabled
 }
-
-void i2c_init()
-{
-    I2C_FREQR = 16; // 16 MHz
-    I2C_CCRL = 0x50; // 100 KHz
-    I2C_CR1.PE = true; // Enable peripheral
-}
-
-
 
 int putchar(int c)
 {

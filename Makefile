@@ -24,6 +24,7 @@ CFLAGS += -I$(STM8S_LIB)
 CFLAGS += -L$(STM8S_LIB)
 CFLAGS += stm8s.lib # From https://github.com/alx741/stm8s-sdcc-lib
 CFLAGS += --out-fmt-ihx
+CFLAGS += -D F_CPU=16000000 # 16 Mhz
 
 
 $(FILE).ihx: $(FILE).c
