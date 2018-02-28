@@ -1,9 +1,10 @@
 // From https://github.com/alx741/stm8s-sdcc-lib
 #include <stm8s.h>
 #include <i2c.h>
-
-#include <stdio.h>
+#include <external/mpu6050.h>
+#include "/usr/share/sdcc/include/stdio.h"
 #include <stdbool.h>
+#include <string.h>
 
 void uart_init();
 void pulse(bool direction);
@@ -11,13 +12,12 @@ void delay(void);
 
 int position = 0;
 
-#define MPU_ADDR 0b11010000
-
 void main()
 {
     uint8_t somechar;
-    uint8_t data;
-    volatile uint8_t dummy;
+    ACCEL_t accel;
+    ACCEL_RAW_t accel_raw;
+    GYRO_t gyro;
 
     CLK_CKDIVR.HSIDIV = HSIDIV_0;
     CLK_CKDIVR.CPUDIV = CPUDIV_0;
@@ -36,26 +36,27 @@ void main()
 
     EXTI_CR1.PAIS = EXTI_RISING_EDGE;
 
-    delay(); // Wait MPU6050 to initialize
 
     uart_init();
     i2c_init_100khz();
     enable_interrupts();
 
-    i2c_start();
-    i2c_slave_select(MPU_ADDR, I2C_TRANSMIT);
-    i2c_transmit_byte(0x00);
-    i2c_stop();
-    i2c_start();
-    i2c_slave_select(MPU_ADDR, I2C_RECEIVE);
-    data = i2c_receive_byte();
+    delay(); // Wait MPU6050 to initialize
 
-    printf("Datum = %d\n", data);
-    PORTC.ODR3 = true;
-
+    mpu6050_wake_up();
 
     while (1)
     {
+        delay();
+
+        /* printf("TEMP = %f\r", mpu6050_read_temp()); */
+
+        mpu6050_read_accel(&accel);
+        printf("X = %f\t\tY = %f\t\tZ = %f\r", accel.X, accel.Y, accel.Z);
+
+        /* mpu6050_read_gyro(&gyro); */
+        /* printf("X = %f\tY = %f\tZ = %f\r", gyro.X, gyro.Y, gyro.Z); */
+
         /* somechar = getchar(); */
         /* if (somechar == 'j') */
         /* { */
@@ -67,6 +68,7 @@ void main()
         /* } */
     }
 }
+
 
 void delay(void)
 {
@@ -99,7 +101,7 @@ void porta_isr(void) __interrupt(IRQ_EXTI0_PORTA)
     {
         position--;
     }
-    /* printf("%d", position); */
+    printf("%d", position);
 }
 
 void uart_init()

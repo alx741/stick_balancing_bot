@@ -21,6 +21,7 @@ CFLAGS += --std-sdcc11
 CFLAGS += -l$(MMCU)
 CFLAGS += -m$(MMCU)
 CFLAGS += -I$(STM8S_LIB)
+CFLAGS += -I../mpu6050_lib/
 CFLAGS += -L$(STM8S_LIB)
 CFLAGS += stm8s.lib # From https://github.com/alx741/stm8s-sdcc-lib
 CFLAGS += --out-fmt-ihx
